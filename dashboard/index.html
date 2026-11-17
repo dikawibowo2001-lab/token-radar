@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Token Radar — pre-token protocols ranked by implied value</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="pulse" aria-hidden="true"></span><h1>TOKEN RADAR</h1><span class="tag">pre-token protocols, ranked by what a launch would be worth</span></div>
+  <div class="meta"><span id="asof"></span><span id="src"></span></div>
+</header>
+
+<section class="stats" id="stats" aria-label="Board summary"></section>
+
+<nav class="tabs" aria-label="Views">
+  <button id="tab-board" class="tab active" type="button">Board</button>
+  <button id="tab-live" class="tab" type="button">Live tokens <span class="tab-note">already trading</span></button>
+  <button id="tab-method" class="tab" type="button">How this ranks</button>
+</nav>
+
+<main>
+  <section id="view-board" class="view">
+    <div class="controls">
+      <input id="q" type="search" placeholder="Search name or slug…" aria-label="Search protocols" autocomplete="off">
+      <select id="f-cat" aria-label="Filter by category"></select>
+      <select id="f-chain" aria-label="Filter by chain"></select>
+      <select id="f-signal" aria-label="Filter by signal">
+        <option value="">Signal: all</option><option value="High">Signal: High</option><option value="Medium">Signal: Medium</option><option value="Low">Signal: Low</option>
+      </select>
+      <label class="chk"><input id="f-watch" type="checkbox"> Watchlist only</label>
+      <select id="f-sort" aria-label="Sort board">
+        <option value="rank">Sort: rank</option><option value="implied">Sort: implied value</option><option value="tvl">Sort: TVL</option><option value="chg">Sort: 7d change</option><option value="signal">Sort: signal</option><option value="age">Sort: age</option>
+      </select>
+      <span id="count" class="count"></span>
+    </div>
+    <div class="tablewrap">
+      <table id="board">
+        <thead><tr>
+          <th data-sort="rank" class="num">Rank</th><th data-sort="name">Protocol</th><th data-sort="category">Category</th><th>Chains</th>
+          <th data-sort="tvl" class="num">TVL</th><th data-sort="chg" class="num">7d</th><th data-sort="implied" class="num">Implied value</th><th data-sort="signal" class="num">Signal</th>
+        </tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <p class="hint">Click any row for its detail view: the implied-value breakdown and the farm plan. “Records no token” means the snapshot carries no token for the protocol — never that it has none.</p>
+  </section>
+
+  <section id="view-detail" class="view hidden">
+    <div class="detail-head">
+      <button id="back" type="button">← Back to board</button>
+      <div class="pager"><button id="prev" type="button">← Prev rank</button><button id="next" type="button">Next rank →</button></div>
+    </div>
+    <article id="detail"></article>
+  </section>
+
+  <section id="view-live" class="view hidden">
+    <p class="lede">These protocols already have a token that trades, so they are <strong>not ranked</strong> on the board. The market prices them already — the table shows the market's own numbers, and the mcap/TVL ratios the board's peer multiples are built from.</p>
+    <div class="tablewrap">
+      <table id="livetab">
+        <thead><tr><th class="num">#</th><th>Protocol</th><th>Category</th><th class="num">TVL</th><th class="num">Market cap</th><th class="num">mcap / TVL</th><th class="num">7d</th></tr></thead>
+        <tbody id="liverows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="view-method" class="view hidden">
+    <h2>How this ranks</h2>
+    <p class="lede">Every number on the board follows from the sealed DefiLlama snapshot alone — TVL, seven-day change, category, chains and listing date. No protocol name is special-cased; the same function scores every row.</p>
+    <div class="formula">
+      <code>implied = TVL × peer multiple × growth × maturity × breadth</code>
+      <ul>
+        <li><strong>Peer multiple</strong> — the median market-cap/TVL of the tokenized protocols in the same category with at least $25M of TVL (a ratio off a tiny base is noise, not a market price), shrunk toward the global median (0.129) by sample size and clamped to 0.02–2.5. The market, not a guess, prices a dollar of TVL.</li>
+        <li><strong>Growth</strong> — 1 + clamp(7d change, −50%, +100%) × 0.5. TVL moving toward a launch counts more than TVL standing still.</li>
+        <li><strong>Maturity</strong> — 0.7 + min(age, 3 years) / 3 years × 0.3. A long record with no token prices years of work.</li>
+        <li><strong>Breadth</strong> — 1 + 3% per extra chain, up to 1.15. More chains, more users who can farm it.</li>
+      </ul>
+    </div>
+    <h3>Peer anchors by category</h3>
+    <div class="tablewrap"><table id="peertab">
+      <thead><tr><th>Category</th><th class="num">Tokenized peers</th><th class="num">Category median mcap/TVL</th><th class="num">Multiple used</th></tr></thead>
+      <tbody id="peerrows"></tbody>
+    </table></div>
+    <h3>The signal</h3>
+    <p>The airdrop-likelihood signal (0–100) is a heuristic from the same fields, never a prediction of a launch: TVL scale 0–30 (log-scaled $5M–$1B), seven-day momentum 0–20, age with no token 0–25, the category's points culture 5–15, chain breadth 0–10. High is 55+, Medium 40–54, Low below 40.</p>
+    <h3>The board</h3>
+    <p>The board holds 200 rows: every protocol on the snapshot's watchlist (40 protocols at or above the $50M floor that record no token and are not a wrapped, staked or bridged product of one that trades), plus the 160 strongest pre-token protocols below the floor by TVL. Rows whose TVL is escrowed, wrapped or bridged value carry a flag in their detail view. Farm plans are generated from each protocol's own category, chains, TVL and age, with a cost and a time on every step.</p>
+  </section>
+</main>
+
+<footer>
+  <p>Snapshot: <span id="foot-src"></span>. Implied values are this radar's own claim from the snapshot's figures, never a prediction that a token will be issued or what it would trade at. Do your own research; farming costs real money.</p>
+</footer>
+
+<script src="../data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
